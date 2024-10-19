@@ -5,6 +5,9 @@ import 'package:flutter_quill/quill_delta.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
+import 'package:image_picker/image_picker.dart';
+
 
 import 'model/Note.dart';
 import 'note_state.dart';
@@ -52,10 +55,42 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     }
   }
 
+  String recognizedText = '';
+
   Future<void> _saveNoteContent(String noteId) async {
     final prefs = await SharedPreferences.getInstance();
     final content = jsonEncode(_controller.document.toDelta().toJson());
     await prefs.setString(noteId, content);
+  }
+
+  Future<String> recognizeText(String filePath) async {
+    final inputImage = InputImage.fromFilePath(filePath);
+    final textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
+    final recognizedText = await textRecognizer.processImage(inputImage);
+
+    await textRecognizer.close();
+
+    // Append recognized text to the Quill editor's document
+    setState(() {
+      // Get the current length of the document
+      final length = _controller.document.length;
+
+      // Append the recognized text as plain text
+      _controller.document.insert(length - 1, recognizedText.text);
+    });
+
+    return recognizedText.text.replaceAll(RegExp(r'\s+'), ' ');
+
+  }
+
+  Future<void> pickImage() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+
+    if (image != null) {
+      String text = await recognizeText(image.path);
+      print(text); // Display the recognized text
+    }
   }
 
   @override
@@ -115,6 +150,15 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
                 configurations:
                 QuillConfigurations.getEditorConfigurations(controller: _controller),
               ),
+            ),
+            ElevatedButton(
+              onPressed: pickImage,
+              child: Text('Pick Image'),
+            ),
+            SizedBox(height: 20),
+            Text(
+              recognizedText,
+              textAlign: TextAlign.center,
             ),
           ],
         ),
