@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_notes_beta/settings_screen.dart';
 import 'package:provider/provider.dart';
 import 'model/Note.dart';
 import 'note_edit_screen.dart';
@@ -18,21 +19,38 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Notes'),
+        title: const Text(
+          'Notes',
+          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => SettingsScreen()),
+              );
+            },
+          ),
+        ],
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(50.0), // Height of the search bar
+          preferredSize: const Size.fromHeight(60.0),
           child: Padding(
-            padding: const EdgeInsets.all(8.0),
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
             child: TextField(
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 hintText: 'Search notes...',
-                border: OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
                 filled: true,
                 fillColor: Colors.white,
               ),
               onChanged: (value) {
                 setState(() {
-                  _searchQuery = value.toLowerCase(); // Update search query
+                  _searchQuery = value.toLowerCase();
                 });
               },
             ),
@@ -41,25 +59,45 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: Consumer<MyAppState>(
         builder: (context, myAppState, child) {
-          // Filter notes based on search query
           final filteredNotes = myAppState.notes.where((note) {
             return note.title.toLowerCase().contains(_searchQuery);
           }).toList();
 
-          return ListView.builder(
+          return filteredNotes.isEmpty
+              ? Center(
+            child: Text(
+              'No notes found',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          )
+              : ListView.builder(
+            padding: const EdgeInsets.all(8.0),
             itemCount: filteredNotes.length,
             itemBuilder: (context, index) {
               final note = filteredNotes[index];
-              return ListTile(
-                title: Text(note.title),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => NoteEditScreen(note: note),
+              return Card(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10.0),
+                ),
+                elevation: 2.0,
+                child: ListTile(
+                  title: Text(
+                    note.title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 18,
                     ),
-                  );
-                },
+                  ),
+                  trailing: Icon(Icons.chevron_right),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => NoteEditScreen(note: note),
+                      ),
+                    );
+                  },
+                ),
               );
             },
           );
@@ -67,12 +105,12 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          final newNote = Note(); // Create a new note
-          Provider.of<MyAppState>(context, listen: false).addNote(newNote); // Add it to the state
+          final newNote = Note();
+          Provider.of<MyAppState>(context, listen: false).addNote(newNote);
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => NoteEditScreen(note: newNote), // Navigate to edit screen
+              builder: (context) => NoteEditScreen(note: newNote),
             ),
           );
         },
@@ -80,4 +118,5 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+
 }

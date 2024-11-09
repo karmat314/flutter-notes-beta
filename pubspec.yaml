@@ -49,6 +49,8 @@ dependencies:
 
   speech_to_text: ^6.5.1
 
+  share_plus: ^10.1.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
