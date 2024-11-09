@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_notes_beta/quill_configurations.dart';
 import 'package:flutter_quill/flutter_quill.dart' hide Text;
@@ -7,7 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:image_picker/image_picker.dart';
-
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 import 'model/Note.dart';
 import 'note_state.dart';
@@ -24,6 +25,8 @@ class NoteEditScreen extends StatefulWidget {
 class _NoteEditScreenState extends State<NoteEditScreen> {
   late QuillController _controller; // Declare controller here
   final TextEditingController _titleController = TextEditingController();
+  late stt.SpeechToText _speech;
+  bool _isListening = false;
 
   @override
   void initState() {
@@ -31,6 +34,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     _titleController.text = widget.note.title;
     _controller = QuillController.basic(); // Initialize controller with basic setup
     _loadNoteContent(widget.note.id); // Load existing note content
+    _speech = stt.SpeechToText();
   }
 
   @override
@@ -93,6 +97,50 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     }
   }
 
+
+
+
+  String _lastRecognizedWords = ''; // Track the last recognized words
+
+  Future<void> _startListening() async {
+    bool available = await _speech.initialize();
+    if (available) {
+      setState(() => _isListening = true);
+      _speech.listen(
+        onResult: (result) {
+          // Print recognized words to Logcat
+          if (kDebugMode) {
+            print("Recognized words: ${result.recognizedWords}");
+          }
+
+          // Find the difference between the current and previous recognized words
+          final newWords = result.recognizedWords.replaceFirst(_lastRecognizedWords, '').trim();
+
+          // Only append if there are new words
+          if (newWords.isNotEmpty) {
+            setState(() {
+              // Update the last recognized words to the current result
+              _lastRecognizedWords = result.recognizedWords;
+
+              // Append the new words to the document
+              final length = _controller.document.length;
+              _controller.document.insert(length - 1, newWords + ' ');
+            });
+          }
+        },
+      );
+    }
+  }
+
+
+
+
+  void _stopListening() {
+    _speech.stop();
+    setState(() => _isListening = false);
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -122,6 +170,10 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
               // Navigate back to the home screen after saving
               Navigator.pop(context);
             },
+          ),
+          IconButton(
+            icon: Icon(_isListening ? Icons.mic : Icons.mic_none),
+            onPressed: _isListening ? _stopListening : _startListening,
           ),
         ],
       ),

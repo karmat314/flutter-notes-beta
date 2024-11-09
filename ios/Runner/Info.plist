@@ -52,6 +52,8 @@
     <string>App wants to access your microphone</string>
     <key>NSPhotoLibraryUsageDescription</key>
     <string>App wants to access your gallery</string>
+    <key>NSSpeechRecognitionUsageDescription</key>
+    <string>App wants to detect speech</string>
 
 
 </dict>
