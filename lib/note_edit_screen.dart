@@ -16,8 +16,9 @@ import 'note_state.dart';
 
 class NoteEditScreen extends StatefulWidget {
   final Note note;
+  final bool isBeingCreated;
 
-  const NoteEditScreen({super.key, required this.note});
+  const NoteEditScreen({super.key, required this.note, required this.isBeingCreated});
 
   @override
   State<NoteEditScreen> createState() => _NoteEditScreenState();
@@ -28,6 +29,8 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
   final TextEditingController _titleController = TextEditingController();
   late stt.SpeechToText _speech;
   bool _isListening = false;
+  late final bool isBeingCreated;
+
 
   @override
   void initState() {
@@ -146,7 +149,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Edit Note'),
+        title: Text(widget.isBeingCreated ? 'Create Note' : 'Edit Note'), // Conditional title
         actions: [
           IconButton(
             icon: const Icon(Icons.save),
@@ -162,6 +165,11 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
               // Update the note title
               widget.note.title = _titleController.text;
 
+              final newNote = Note();
+              newNote.title = widget.note.title;
+
+              Provider.of<MyAppState>(context, listen: false).addNote(newNote);
+
               // Save the note content to SharedPreferences
               await _saveNoteContent(widget.note.id);
 
@@ -173,14 +181,17 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
             },
           ),
 
-          IconButton(
-            icon: const Icon(Icons.delete),
-            onPressed: () {
-              Provider.of<MyAppState>(context, listen: false).deleteNoteToRecycleBin(widget.note);
-              // Navigate back to the home screen after saving
-              Navigator.pop(context);
-            },
-          ),
+          // Show delete button only if the note has an id (i.e., editing an existing note)
+          if (!widget.isBeingCreated)
+            IconButton(
+              icon: const Icon(Icons.delete),
+              onPressed: () {
+                Provider.of<MyAppState>(context, listen: false).deleteNoteToRecycleBin(widget.note);
+                // Navigate back to the home screen after saving
+                Navigator.pop(context);
+              },
+            ),
+
           IconButton(
             icon: Icon(
               _isListening ? Icons.mic : Icons.mic_none,
@@ -190,11 +201,11 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
           ),
 
           IconButton(
-              onPressed: () {
-                final content = _controller.document.toPlainText();
-                Share.share(content, subject: widget.note.title);
-              },
-              icon: Icon(Icons.share)
+            onPressed: () {
+              final content = _controller.document.toPlainText();
+              Share.share(content, subject: widget.note.title);
+            },
+            icon: Icon(Icons.share),
           ),
         ],
       ),
@@ -213,15 +224,13 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
             const SizedBox(height: 8),
             QuillSimpleToolbar(
               controller: _controller,
-              configurations:
-              QuillConfigurations.getToolbarConfigurations(controller: _controller),
+              configurations: QuillConfigurations.getToolbarConfigurations(controller: _controller),
             ),
             const SizedBox(height: 8),
             Expanded(
               child: QuillEditor.basic(
                 controller: _controller,
-                configurations:
-                QuillConfigurations.getEditorConfigurations(controller: _controller),
+                configurations: QuillConfigurations.getEditorConfigurations(controller: _controller),
               ),
             ),
             ElevatedButton(
@@ -238,4 +247,5 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
       ),
     );
   }
+
 }

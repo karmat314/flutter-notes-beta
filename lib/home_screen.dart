@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'model/Note.dart';
 import 'note_edit_screen.dart';
 import 'note_state.dart'; // Import the NoteEditScreen
+import 'package:intl/intl.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -88,12 +89,19 @@ class _HomeScreenState extends State<HomeScreen> {
                       fontSize: 18,
                     ),
                   ),
-                  trailing: Icon(Icons.chevron_right),
+                  subtitle: Text(
+                    'Created: ${DateFormat('dd/MM/yyyy').format(note.createdAt)}',
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 14,
+                    ),
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
                   onTap: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => NoteEditScreen(note: note),
+                        builder: (context) => NoteEditScreen(note: note, isBeingCreated: false),
                       ),
                     );
                   },
@@ -105,17 +113,20 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
+          // Create a new empty note with no ID
           final newNote = Note();
-          Provider.of<MyAppState>(context, listen: false).addNote(newNote);
+
+          // Navigate to the NoteEditScreen to edit the new note
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => NoteEditScreen(note: newNote),
+              builder: (context) => NoteEditScreen(note: newNote, isBeingCreated: true),
             ),
           );
         },
         child: const Icon(Icons.add),
       ),
+
     );
   }
 
