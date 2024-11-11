@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_notes_beta/settings_screen.dart';
+import 'package:local_auth/local_auth.dart';
 import 'package:provider/provider.dart';
 import 'groups_screen.dart';
 import 'model/Note.dart';
@@ -16,6 +17,36 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   String _searchQuery = ''; // State to manage the search query
+  final LocalAuthentication auth = LocalAuthentication();
+
+  Future<void> _authenticateAndShowNote(Note note) async {
+    bool authenticated = false;
+
+    try {
+      // Attempt to authenticate
+      authenticated = await auth.authenticate(
+        localizedReason: 'Please authenticate to access the vault.',
+        options: const AuthenticationOptions(biometricOnly: true),
+      );
+    } catch (e) {
+      print('Authentication error: $e');
+    }
+
+    if (authenticated) {
+      // Navigate to the vault screen if authentication is successful
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => NoteEditScreen(note: note, isBeingCreated: false),
+        ),
+      );
+    } else {
+      // Optionally, show a message if authentication fails
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Authentication failed.')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -92,13 +123,26 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 elevation: 2.0,
                 child: ListTile(
-                  title: Text(
-                    note.title,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 18,
-                    ),
+                  title: Row(
+                    children: [
+                      Text(
+                        note.title,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 18,
+                        ),
+                      ),
+                      if (note.vaulted) ...[
+                        const SizedBox(width: 8), // Optional spacing between text and icon
+                        const Icon(
+                          Icons.lock,
+                          size: 18,
+                          color: Colors.grey,
+                        ),
+                      ],
+                    ],
                   ),
+
                   subtitle: Text(
                     'Created: ${DateFormat('dd/MM/yyyy').format(note.createdAt)}',
                     style: TextStyle(
@@ -108,12 +152,18 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => NoteEditScreen(note: note, isBeingCreated: false),
-                      ),
-                    );
+                    if(!note.vaulted){
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => NoteEditScreen(note: note, isBeingCreated: false),
+                        ),
+                      );
+                    }
+                    else{
+                       _authenticateAndShowNote(note);
+                    }
+
                   },
                 ),
               );

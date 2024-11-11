@@ -16,6 +16,34 @@ class MyAppState extends ChangeNotifier {
   MyAppState() {
     _loadNotes();
     _loadDeletedNotes();
+    _loadGroups();
+  }
+
+  Future<void> _loadGroups() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedGroups = prefs.getStringList('groups') ?? [];
+    _groups = savedGroups
+        .map((groupData) => Group.fromJson(jsonDecode(groupData)))
+        .toList();
+    notifyListeners();
+  }
+
+  Future<void> _saveGroups() async {
+    final prefs = await SharedPreferences.getInstance();
+    final groupsJson = _groups.map((group) => jsonEncode(group.toJson())).toList();
+    await prefs.setStringList('groups', groupsJson);
+  }
+
+  void addGroup(Group group) {
+    _groups.add(group);
+    _saveGroups(); // Save groups after adding
+    notifyListeners();
+  }
+
+  void removeGroup(String groupId) {
+    _groups.removeWhere((group) => group.id == groupId);
+    _saveGroups(); // Save groups after removing
+    notifyListeners();
   }
 
   Future<void> _loadNotes() async {
@@ -98,13 +126,12 @@ class MyAppState extends ChangeNotifier {
 
   List<Group> get groups => _groups;
 
-  void addGroup(Group group) {
-    _groups.add(group);
-    notifyListeners();
-  }
 
-  void removeGroup(String groupId) {
-    _groups.removeWhere((group) => group.id == groupId);
+  List<Note> get vaultedNotes => _notes.where((note) => note.vaulted).toList();
+
+  void unlockNote(Note note) {
+    note.vaulted = false;
+    _saveNotes();
     notifyListeners();
   }
 }

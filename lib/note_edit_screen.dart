@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_notes_beta/quill_configurations.dart';
 import 'package:flutter_quill/flutter_quill.dart' hide Text;
 import 'package:flutter_quill/quill_delta.dart';
+import 'package:local_auth/local_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
@@ -33,6 +34,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
   bool _isListening = false;
   late final bool isBeingCreated;
   List<Group> selectedGroups = [];
+  final LocalAuthentication auth = LocalAuthentication();
 
 
   @override
@@ -51,6 +53,38 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     _titleController.dispose();
     super.dispose();
   }
+
+  Future<void> _authenticateAndLockNote() async {
+    bool authenticated = false;
+
+    try {
+      // Authenticate using local auth (Face ID, fingerprint, etc.)
+      authenticated = await auth.authenticate(
+        localizedReason: 'Please authenticate to ${widget.note.vaulted ? "unlock" : "lock"} this note.',
+        options: const AuthenticationOptions(biometricOnly: true),
+      );
+    } catch (e) {
+      print('Authentication error: $e');
+    }
+
+    if (authenticated) {
+      // Toggle vault status based on current state
+      setState(() {
+        widget.note.vaulted = !widget.note.vaulted;
+      });
+
+      // Show success message based on new state
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(widget.note.vaulted ? 'Note has been locked.' : 'Note has been unlocked.')),
+      );
+    } else {
+      // Show a failure message if authentication failed
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Authentication failed.')),
+      );
+    }
+  }
+
 
   Future<void> _loadNoteContent(String noteId) async {
     final prefs = await SharedPreferences.getInstance();
@@ -153,7 +187,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.isBeingCreated ? 'Create Note' : 'Edit Note'), // Conditional title
+        title: Text(widget.isBeingCreated ? 'Create' : 'Edit'), // Conditional title
         actions: [
           IconButton(
             icon: const Icon(Icons.save),
@@ -230,6 +264,12 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
               Share.share(content, subject: widget.note.title);
             },
             icon: Icon(Icons.share),
+          ),
+          IconButton(
+            onPressed: _authenticateAndLockNote,
+            icon: Icon(
+              widget.note.vaulted ? Icons.lock : Icons.lock_open,
+            ),
           ),
         ],
       ),
