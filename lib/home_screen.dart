@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_notes_beta/settings_screen.dart';
 import 'package:provider/provider.dart';
+import 'groups_screen.dart';
 import 'model/Note.dart';
 import 'note_edit_screen.dart';
 import 'note_state.dart'; // Import the NoteEditScreen
@@ -25,6 +26,15 @@ class _HomeScreenState extends State<HomeScreen> {
           style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.group),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => GroupsPage()),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () {

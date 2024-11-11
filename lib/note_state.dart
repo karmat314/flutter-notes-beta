@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'model/Group.dart';
 import 'model/Note.dart';
 
 import 'dart:convert';
@@ -90,6 +91,20 @@ class MyAppState extends ChangeNotifier {
   void deleteNotePermanently(Note note) {
     _deletedNotes.remove(note);
     _saveDeletedNotes();
+    notifyListeners();
+  }
+
+  List<Group> _groups = [];
+
+  List<Group> get groups => _groups;
+
+  void addGroup(Group group) {
+    _groups.add(group);
+    notifyListeners();
+  }
+
+  void removeGroup(String groupId) {
+    _groups.removeWhere((group) => group.id == groupId);
     notifyListeners();
   }
 }

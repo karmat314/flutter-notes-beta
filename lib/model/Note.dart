@@ -1,9 +1,13 @@
 import 'package:uuid/uuid.dart';
 
+import 'Group.dart';
+
 class Note {
   final String id;
   String title;
   final DateTime createdAt;
+
+  List<Group> groups = [];
 
   Note({
     String? id,

@@ -11,6 +11,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:share_plus/share_plus.dart';
 
+import 'group_select.dart';
+import 'model/Group.dart';
 import 'model/Note.dart';
 import 'note_state.dart';
 
@@ -30,6 +32,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
   late stt.SpeechToText _speech;
   bool _isListening = false;
   late final bool isBeingCreated;
+  List<Group> selectedGroups = [];
 
 
   @override
@@ -39,6 +42,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     _controller = QuillController.basic(); // Initialize controller with basic setup
     _loadNoteContent(widget.note.id); // Load existing note content
     _speech = stt.SpeechToText();
+    selectedGroups = List.from(widget.note.groups); // Initialize with the note's current group, if any
   }
 
   @override
@@ -179,6 +183,26 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
               // Navigate back to the home screen after saving
               Navigator.pop(context);
             },
+          ),
+
+          IconButton(
+            icon: Icon(Icons.group),
+            onPressed: () async {
+              final List<Group> chosenGroups = await showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return GroupSelectionDialog(
+                    availableGroups: Provider.of<MyAppState>(context, listen: false).groups, // Assuming MyAppState holds available groups
+                    selectedGroups: selectedGroups,
+                  );
+                },
+              );
+
+              setState(() {
+                selectedGroups = chosenGroups;
+                widget.note.groups = chosenGroups; // Update the note with selected groups
+              });
+                        },
           ),
 
           // Show delete button only if the note has an id (i.e., editing an existing note)
