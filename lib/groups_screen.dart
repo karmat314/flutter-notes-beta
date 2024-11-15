@@ -36,6 +36,34 @@ class GroupsPage extends StatelessWidget {
                 ),
                 child: ListTile(
                   title: Text(group.name),
+                  trailing: IconButton(
+                    icon: Icon(Icons.delete, color: Colors.red),
+                    onPressed: () async {
+                      // Show confirmation dialog
+                      final bool? shouldDelete = await showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: Text('Delete Group'),
+                          content: Text('Are you sure you want to delete this group?'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, false),
+                              child: Text('Cancel'),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, true),
+                              child: Text('Delete'),
+                            ),
+                          ],
+                        ),
+                      );
+
+                      // Delete group if confirmed
+                      if (shouldDelete == true) {
+                        Provider.of<MyAppState>(context, listen: false).removeGroup(group.id);
+                      }
+                    },
+                  ),
                   onTap: () {
                     Navigator.push(
                       context,

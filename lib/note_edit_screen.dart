@@ -71,6 +71,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
       // Toggle vault status based on current state
       setState(() {
         widget.note.vaulted = !widget.note.vaulted;
+        Provider.of<MyAppState>(context, listen: false).updateNote(widget.note);
       });
 
       // Show success message based on new state
@@ -206,13 +207,16 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
               final newNote = Note();
               newNote.title = widget.note.title;
 
-              Provider.of<MyAppState>(context, listen: false).addNote(newNote);
+              if (widget.isBeingCreated) {
+                // If creating a new note, add it to the notes list
+                Provider.of<MyAppState>(context, listen: false).addNote(widget.note);
+              } else {
+                // If editing an existing note, update it in the notes list
+                Provider.of<MyAppState>(context, listen: false).updateNote(widget.note);
+              }
 
               // Save the note content to SharedPreferences
               await _saveNoteContent(widget.note.id);
-
-              // Notify listeners that the note has been updated
-              Provider.of<MyAppState>(context, listen: false).updateNote(widget.note);
 
               // Navigate back to the home screen after saving
               Navigator.pop(context);
@@ -220,22 +224,27 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
           ),
 
           IconButton(
-            icon: Icon(Icons.group),
+            icon: const Icon(Icons.group),
             onPressed: () async {
+              // Show the group selection dialog and await the selected groups
               final List<Group> chosenGroups = await showDialog(
                 context: context,
                 builder: (BuildContext context) {
                   return GroupSelectionDialog(
-                    availableGroups: Provider.of<MyAppState>(context, listen: false).groups, // Assuming MyAppState holds available groups
-                    selectedGroups: selectedGroups,
+                    availableGroups: Provider.of<MyAppState>(context, listen: false).groups,
+                    selectedGroups: selectedGroups, // Pass selected groups to the dialog
                   );
                 },
               );
 
+              // If user selects groups, update the note and persist changes
               setState(() {
-                selectedGroups = chosenGroups;
-                widget.note.groups = chosenGroups; // Update the note with selected groups
+                selectedGroups = chosenGroups; // Update selectedGroups in state
+                widget.note.groups = chosenGroups; // Update note's groups
               });
+
+              // Persist the updated note with its new groups
+              Provider.of<MyAppState>(context, listen: false).updateNote(widget.note);
                         },
           ),
 
